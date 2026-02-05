@@ -1,17 +1,18 @@
 # -*- coding: utf-8 -*-
-# تطبيق Streamlit للبحث عن العناصر الكيميائية
-# للتشغيل محلياً:
-# 1) تثبيت المكتبة: pip install streamlit
-# 2) التشغيل: streamlit run app.py
+# تطبيق Streamlit للبحث عن العناصر الكيميائية (نسخة معدلة)
+# للتشغيل:
+# pip install streamlit
+# streamlit run app.py
 
 import streamlit as st
 
 # -----------------------------
-# قاعدة بيانات العناصر (تقدر توسّعها)
+# قاعدة بيانات العناصر (مع دعم العربية)
 # -----------------------------
 
 elements = {
-    "Hydrogen": {
+    "hydrogen": {
+        "names_ar": ["هيدروجين"],
         "symbol": "H",
         "atomic_number": 1,
         "mass_number": 1,
@@ -19,7 +20,8 @@ elements = {
         "properties": "غاز عديم اللون، خفيف جداً، قابل للاشتعال.",
         "nature": "يوجد في الماء والنجوم."
     },
-    "Oxygen": {
+    "oxygen": {
+        "names_ar": ["أكسجين", "اوكسجين"],
         "symbol": "O",
         "atomic_number": 8,
         "mass_number": 16,
@@ -27,7 +29,8 @@ elements = {
         "properties": "غاز ضروري للتنفس ويدعم الاحتراق.",
         "nature": "يوجد في الهواء والماء."
     },
-    "Carbon": {
+    "carbon": {
+        "names_ar": ["كربون"],
         "symbol": "C",
         "atomic_number": 6,
         "mass_number": 12,
@@ -35,7 +38,8 @@ elements = {
         "properties": "عنصر أساسي في المركبات العضوية.",
         "nature": "يوجد في الكائنات الحية والفحم."
     },
-    "Sodium": {
+    "sodium": {
+        "names_ar": ["صوديوم", "الصوديوم"],
         "symbol": "Na",
         "atomic_number": 11,
         "mass_number": 23,
@@ -44,6 +48,16 @@ elements = {
         "nature": "يوجد في ملح الطعام."
     }
 }
+
+# -----------------------------
+# دالة تنظيف النص (تشيل ال التعريف)
+# -----------------------------
+
+def normalize(text):
+    text = text.strip().lower()
+    if text.startswith("ال"):
+        text = text[2:]
+    return text
 
 # -----------------------------
 # إعداد الصفحة
@@ -56,7 +70,7 @@ st.set_page_config(
 )
 
 # -----------------------------
-# تنسيق CSS (لتوسيط البحث + زر الزاوية)
+# تنسيق CSS
 # -----------------------------
 
 st.markdown(
@@ -64,19 +78,7 @@ st.markdown(
     <style>
     .center-box {
         text-align: center;
-        margin-top: 150px;
-    }
-
-    .corner-button {
-        position: fixed;
-        bottom: 20px;
-        right: 20px;
-        background-color: #ff9800;
-        color: white;
-        padding: 12px 18px;
-        border-radius: 30px;
-        font-size: 16px;
-        text-decoration: none;
+        margin-top: 120px;
     }
     </style>
     """,
@@ -84,47 +86,62 @@ st.markdown(
 )
 
 # -----------------------------
-# واجهة البحث (في النصف)
+# واجهة البحث
 # -----------------------------
 
 st.markdown('<div class="center-box">', unsafe_allow_html=True)
 
 st.title("🔬 البحث عن عنصر كيميائي")
 
-# الإدخال
-query = st.text_input("اكتب اسم العنصر بالإنجليزي ثم اضغط Enter")
+query = st.text_input("اكتب اسم العنصر (عربي أو إنجليزي) ثم اضغط Enter")
+
+# -----------------------------
+# البحث
+# -----------------------------
+
+found = None
+
+if query:
+    q = normalize(query)
+
+    # بحث إنجليزي
+    if q in elements:
+        found = elements[q]
+    else:
+        # بحث عربي
+        for el in elements.values():
+            ar_names = [normalize(n) for n in el.get("names_ar", [])]
+            if q in ar_names:
+                found = el
+                break
 
 # -----------------------------
 # عرض النتائج
 # -----------------------------
 
 if query:
-    element = elements.get(query)
-
-    if element:
+    if found:
         st.success("تم العثور على العنصر ✅")
-
-        st.write(f"**الرمز:** {element['symbol']}")
-        st.write(f"**العدد الذري:** {element['atomic_number']}")
-        st.write(f"**العدد الكتلي:** {element['mass_number']}")
-        st.write(f"**الشحنة:** {element['charge']}")
-        st.write(f"**الخصائص:** {element['properties']}")
-        st.write(f"**موقعه في الطبيعة:** {element['nature']}")
-
+        st.write(f"**الرمز:** {found['symbol']}")
+        st.write(f"**العدد الذري:** {found['atomic_number']}")
+        st.write(f"**العدد الكتلي:** {found['mass_number']}")
+        st.write(f"**الشحنة:** {found['charge']}")
+        st.write(f"**الخصائص:** {found['properties']}")
+        st.write(f"**موقعه في الطبيعة:** {found['nature']}")
     else:
         st.error("العنصر غير موجود في قاعدة البيانات ❌")
 
 st.markdown('</div>', unsafe_allow_html=True)
 
 # -----------------------------
-# زر الزاوية + عرض الجدول الدوري
+# زر عرض الجدول الدوري (حل المشكلة)
 # -----------------------------
 
-show_table = st.button("📊 عرض الجدول الدوري")
+st.markdown("---")
 
-if show_table:
+if st.button("📊 عرض الجدول الدوري"):
     st.image(
-        "https://upload.wikimedia.org/wikipedia/commons/0/01/Periodic_table_large.svg",
+        "https://upload.wikimedia.org/wikipedia/commons/thumb/0/01/Periodic_table_large.svg/1200px-Periodic_table_large.svg.png",
         caption="الجدول الدوري للعناصر",
         use_container_width=True
     )
